@@ -1,6 +1,4 @@
-# quantsim dashboard
 
-React frontend + Flask backend wiring your Python quantsim script.
 
 ## Structure
 
