@@ -1,81 +1,191 @@
+# Quant App
 
+A full-stack quantitative finance dashboard built with **Flask, React (Vite), NumPy, Pandas, Matplotlib**, and an optional high-performance **C++ pybind11 module (`quantsim`)** for financial indicators.
+
+---
 
 ## Structure
 
 ```
 quant_app/
 ├── backend/
-│   ├── app.py            ← Flask API (wraps your quantsim pipeline)
+│   ├── app.py        
 │   └── requirements.txt
 └── frontend/
     ├── src/
-    │   ├── App.jsx        ← React dashboard
+    │   ├── App.jsx
     │   └── main.jsx
     ├── index.html
     ├── package.json
-    └── vite.config.js     ← proxies /api → Flask :8000
+    └── vite.config.js    ← proxies /api → Flask :8000
 ```
+
+---
 
 ## Setup
 
-### 1 — Backend
+## 0 — Build C++ Quant Library (REQUIRED FIRST STEP)
+
+Before running anything, you must compile and install the C++ `pybind11` module (`quantsim`).
+
+This step generates the `quantsim` Python extension used by the backend.
+
+### Install build dependencies
+
+```bash
+pip install pybind11 setuptools wheel
+```
+
+---
+
+### Build and install the module
+
+From the project root (where your `setup.py` or `CMakeLists.txt` is located):
+
+```bash
+pip install .
+```
+
+Or for development mode:
+
+```bash
+pip install -e .
+```
+
+---
+
+### What this does
+
+- Compiles `quantsim.cpp`
+- Links `pybind11` bindings (`PYBIND11_MODULE`)
+- Generates the compiled extension (`quantsim.pyd` on Windows)
+- Makes the module importable in Python:
+
+```python
+import quantsim
+```
+
+---
+
+### Verify installation
+
+```bash
+python -c "import quantsim; print(dir(quantsim))"
+```
+
+If this runs successfully, the C++ layer is correctly installed.
+
+---
+
+## 1 — Backend
+
+Once the C++ module is installed:
 
 ```bash
 cd backend
-pip install -r requirements.txt   # flask flask-cors yfinance numpy pandas matplotlib
-# quantsim must already be installed (your C++/pybind11 package)
+pip install -r requirements.txt
+# flask flask-cors yfinance numpy pandas matplotlib
 python app.py
-# → http://localhost:8000
 ```
 
-If `quantsim` is not importable, the backend falls back to pure-numpy
-implementations of every indicator so you can still run without the C++ lib.
+Backend runs on:
 
-### 2 — Frontend
+```
+http://localhost:8000
+```
+
+If `quantsim` is not available, the backend automatically falls back to pure NumPy implementations so the system still works without the C++ extension.
+
+---
+
+## 2 — Frontend
 
 ```bash
 cd frontend
 npm install
 npm run dev
-# → http://localhost:5173
 ```
 
-Open http://localhost:5173 — click any ticker to run the pipeline.
+Frontend runs on:
+
+```
+http://localhost:5173
+```
+
+Open it in your browser and select a ticker to run the full quant pipeline.
+
+---
 
 ## API
 
-| Method | Path        | Body              | Returns                              |
-|--------|-------------|-------------------|--------------------------------------|
-| GET    | /api/tickers | —                | `{ tickers: [...] }`                 |
-| POST   | /api/run    | `{ ticker: "NVDA" }` | `{ ticker, stats, chart (b64), sparkline, dates }` |
+| Method | Endpoint     | Body                     | Returns |
+|--------|-------------|--------------------------|----------|
+| GET    | /api/tickers | —                        | `{ tickers: [...] }` |
+| POST   | /api/run     | `{ ticker: "NVDA" }`     | `{ ticker, stats, chart (base64), sparkline, dates }` |
 
-### Response shape — `stats`
+---
 
-| Field             | Description                         |
-|-------------------|-------------------------------------|
-| cagr              | annualised CAGR (decimal)           |
-| sharpe            | Sharpe ratio                        |
-| beta              | rolling 60-day beta vs S&P 500      |
-| z                 | Z-score (20-day window)             |
-| rsi               | RSI-14 (current)                    |
-| macd              | MACD(12,26) (current)               |
-| cci               | CCI-20 (current)                    |
-| wr                | Williams %R-14 (current)            |
-| atr               | ATR-14 (current)                    |
-| pct_b             | Bollinger %B (current)              |
-| gc                | bool — Golden Cross signal          |
-| z_long / z_short  | bool — Z-score entry signals        |
-| wr_ob / wr_os     | bool — Williams overbought/oversold |
-| price             | latest close                        |
-| price_chg_pct     | 1y price change %                   |
-| ann_ret / ann_std | annualised return & volatility %    |
-| quantsim_available| bool — C++ lib loaded               |
+## Stats Output
 
-## Extending
+| Field | Description |
+|------|-------------|
+| cagr | Annualized CAGR |
+| sharpe | Sharpe ratio |
+| beta | 60-day beta vs S&P 500 |
+| z | 20-day Z-score |
+| rsi | RSI-14 |
+| macd | MACD(12,26) |
+| cci | Commodity Channel Index |
+| wr | Williams %R |
+| atr | Average True Range |
+| pct_b | Bollinger Band %B |
+| gc | Golden cross signal |
+| z_long / z_short | Z-score entry signals |
+| wr_ob / wr_os | Overbought/oversold signals |
+| price | Latest closing price |
+| price_chg_pct | 1-year price change |
+| ann_ret / ann_std | Annual return & volatility |
+| quantsim_available | Whether C++ module is loaded |
 
-- **Add indicators**: implement in `backend/app.py`, add to the `stats` dict,
-  then add a `<StatPill>` in `frontend/src/App.jsx`.
-- **Add chart panels**: extend `build_chart()` in `app.py` — the matplotlib
-  figure is returned as a base64 PNG and displayed by the React `<img>` tag.
-- **Production**: serve the Vite build (`npm run build`) via Flask's
-  `static_folder` or nginx, remove `flask-cors`.
+---
+
+## Extending the Project
+
+### Add new indicators
+- Implement in `backend/app.py`
+- Add to `stats` dictionary
+- Display in `frontend/src/App.jsx` using a new `<StatPill />`
+
+---
+
+### Add new charts
+- Modify `build_chart()` in `app.py`
+- Matplotlib figure is returned as a base64 PNG
+- Rendered in React via `<img />`
+
+---
+
+### Production deployment
+- Run `npm run build` in frontend
+- Serve static build via Flask or nginx
+- Remove `flask-cors` in production
+
+---
+
+## Notes
+
+- C++ extension is optional but recommended for performance
+- Backend is designed to gracefully degrade if `quantsim` is unavailable
+- Frontend communicates via `/api/run` proxy through Vite
+
+---
+
+## Tech Stack
+
+- Python (Flask)
+- React (Vite)
+- NumPy / Pandas
+- Matplotlib
+- yfinance
+- C++ (pybind11 optional acceleration layer)
+```
