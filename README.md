@@ -77,10 +77,10 @@ If this runs successfully, the C++ layer is correctly installed.
 
 ---
 
-## 2
+## 1
 Simply open up the folder and run build.bat to setup both the frontend and backend together, which will then open up a local server. 
 
-## 3 extra info
+## 2 extra info
 
 ## API
 
