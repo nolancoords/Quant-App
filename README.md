@@ -77,44 +77,10 @@ If this runs successfully, the C++ layer is correctly installed.
 
 ---
 
-## 1 — Backend
+## 2
+Simply open up the folder and run build.bat to setup both the frontend and backend together, which will then open up a local server. 
 
-Once the C++ module is installed:
-
-```bash
-cd backend
-pip install -r requirements.txt
-# flask flask-cors yfinance numpy pandas matplotlib
-python app.py
-```
-
-Backend runs on:
-
-```
-http://localhost:8000
-```
-
-If `quantsim` is not available, the backend automatically falls back to pure NumPy implementations so the system still works without the C++ extension.
-
----
-
-## 2 — Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Frontend runs on:
-
-```
-http://localhost:5173
-```
-
-Open it in your browser and select a ticker to run the full quant pipeline.
-
----
+## 3 extra info
 
 ## API
 
